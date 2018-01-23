@@ -1,0 +1,11 @@
+/log
+/apps/*/log
+/_build
+/rel
+/cover
+/deps
+erl_crash.dump
+*.ez
+*.pyc
+tags
+*.swp

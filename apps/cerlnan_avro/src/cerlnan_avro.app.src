@@ -1,0 +1,19 @@
+{application, cerlnan_avro,
+ [
+  {description, "Erlang client for cernan's avro source."},
+  {vsn, "0.0.1"},
+  {registered, []},
+  {mod, {cerlnan_avro_app, []}},
+  {applications,
+   [
+    kernel,
+    stdlib
+   ]},
+  {env,[]},
+  {modules, []},
+
+  {maintainers, []},
+  {licenses, []},
+  {links, []}
+ ]
+}.
