@@ -13,16 +13,6 @@ defmodule CerlnanUmbrella.Mixfile do
     ]
   end
 
-  # Configuration for the OTP application.
-  #
-  # Type `mix help compile.app` for more information.
-  #def application do
-    #3  [applications: [], mod: {:cerlnan_app, []}]
-  #nd
-
-  # Specifies your project dependencies.
-  #
-  # Type `mix help deps` for examples and options.
   defp deps do
     [{:dialyxir, "~> 0.5.1", only: [:dev, :test], runtime: false},
      {:mix_eunit, "~> 0.3.0", only: [:dev, :test], runtime: false}]
