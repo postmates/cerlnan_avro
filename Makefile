@@ -21,10 +21,12 @@ clean:
 clobber: clean
 	rm -rf _build
 
-check: xref dialyzer eunit exunit ;
+check: xref dialyzer unit ;
 
 dialyzer:
 	@$(MIX) dialyzer
+
+unit: eunit exunit ;
 
 exunit:
 	@$(MIX) test --cover

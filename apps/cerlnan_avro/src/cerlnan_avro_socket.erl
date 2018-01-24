@@ -48,7 +48,7 @@ start_link(SocketArgs) ->
 %% gen_server
 %%====================================================================
 
--spec init(socket_args()) -> {ok, map()} | {error, any()}.
+-spec init(socket_args()) -> {ok, map()}.
 init(SocketArgs) ->
     Backend =
         case maps:get(backend, SocketArgs, undefined) of
@@ -58,12 +58,8 @@ init(SocketArgs) ->
                 Atom
         end,
     BackendArgs = maps:get(backend_args, SocketArgs, #{}),
-    case Backend:init(BackendArgs) of
-        {ok, BackendState} ->
-            {ok, #{backend => Backend, backend_state => BackendState, socket => undefined}};
-        Error ->
-            Error
-    end.
+    {ok, BackendState} = Backend:init(BackendArgs),
+    {ok, #{backend => Backend, backend_state => BackendState, socket => undefined}}.
 
 handle_call({publish_blob, Blob, Args}, _From, State=#{backend:=Backend, backend_state:=BackendState}) ->
     {ok, NewBackendState} = Backend:publish_blob(Blob, Args, BackendState),

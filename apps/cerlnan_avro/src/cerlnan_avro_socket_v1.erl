@@ -14,8 +14,8 @@
 
 -type v1_init_args() ::
     #{
-      host => atom() | string(),
-      port => integer(),
+      host => inet:socket_address() | inet:hostname(),
+      port => inet:port_number(),
       timeout => timeout()
     }.
 
