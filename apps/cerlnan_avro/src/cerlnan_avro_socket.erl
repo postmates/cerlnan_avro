@@ -5,15 +5,21 @@
 -export([publish_blob/3]).
 
 % gen_server callbacks
--export([start/1, start/2, start_link/1, start_link/2, init/1, handle_call/3, handle_cast/2]).
+-export([start/1, start_link/1, init/1, handle_call/3, handle_cast/2]).
+
+-define(CERLNAN_AVRO_DEFAULT_BACKEND, cerlnan_avro_socket_v1).
 
 %%====================================================================
 %% Custom Types
 %%====================================================================
 
 -type avro_socket_backend() :: undefined | atom().
+-type socket_args() :: #{
+    backend => avro_socket_backend(),
+    backend_args => map()
+}.
 
--export_type([avro_socket_backend/0]).
+-export_type([avro_socket_backend/0, socket_args/0]).
 
 %%====================================================================
 %% Behavior
@@ -30,33 +36,28 @@
 publish_blob(Socket, Blob, Args) ->
 	gen_server:call(Socket, {publish_blob, Blob, Args}).
 
--spec start(map()) -> ok | {error, any()}.
-start(BackendArgs) ->
-    start(undefined, BackendArgs).
+-spec start(socket_args()) -> {ok, pid()} | {error, term()}.
+start(SocketArgs) ->
+	gen_server:start(?MODULE, SocketArgs, []).
 
--spec start(avro_socket_backend(), map()) -> ok | {error, any()}.
-start(Backend, BackendArgs) ->
-	gen_server:start(?MODULE, {Backend, BackendArgs}, []).
-
--spec start_link(map()) -> {ok, pid()} | {error, any()}.
-start_link(BackendArgs) ->
-    start_link(undefined, BackendArgs).
-
--spec start_link(avro_socket_backend(), map()) -> {ok, pid()} | {error, any()}.
-start_link(Backend, BackendArgs) ->
-    gen_server:start_link(?MODULE, {Backend, BackendArgs}, []).
+-spec start_link(socket_args()) -> {ok, pid()} | {error, term()}.
+start_link(SocketArgs) ->
+    gen_server:start_link(?MODULE, SocketArgs, []).
 
 %%====================================================================
 %% gen_server
 %%====================================================================
 
--spec init({avro_socket_backend(), map()}) -> {ok, map()} | {error, any()}.
-init({MaybeBackend, BackendArgs}) ->
+-spec init(socket_args()) -> {ok, map()} | {error, any()}.
+init(SocketArgs) ->
     Backend =
-        case MaybeBackend of
-            undefined -> cerlnan_avro_socket_v1;
-            Atom when is_atom(Atom) -> Atom
+        case maps:get(backend, SocketArgs, undefined) of
+            undefined ->
+                ?CERLNAN_AVRO_DEFAULT_BACKEND;
+            Atom when is_atom(Atom) ->
+                Atom
         end,
+    BackendArgs = maps:get(backend_args, SocketArgs, #{}),
     case Backend:init(BackendArgs) of
         {ok, BackendState} ->
             {ok, #{backend => Backend, backend_state => BackendState, socket => undefined}};
@@ -70,3 +71,33 @@ handle_call({publish_blob, Blob, Args}, _From, State=#{backend:=Backend, backend
 
 handle_cast(_, State) ->
     {noreply, State}.
+
+%%====================================================================
+%% Tests
+%%====================================================================
+
+-include_lib("eunit/include/eunit.hrl").
+
+init_test() ->
+    Args = #{
+      backend => cerlnan_avro_socket_dummy,
+      backend_args => #{}
+    },
+    {ok, #{}} = init(Args).
+
+spawn_link_test() ->
+    Args = #{
+      backend => cerlnan_avro_socket_dummy,
+      backend_args => #{}
+    },
+    {ok, Pid} = start_link(Args),
+    exit(Pid, normal).
+
+publish_blob_test() ->
+    Args = #{
+      backend => cerlnan_avro_socket_dummy,
+      backend_args => #{}
+    },
+    {ok, Pid} = start_link(Args),
+    ok = publish_blob(Pid, <<>>, #{}),
+    exit(Pid, normal).

@@ -6,6 +6,7 @@ defmodule Cerlnan.Avro.Mixfile do
      version: "0.0.1",
      elixir: "~> 1.0",
      language: :erlang,
+     env: [],
      deps: deps(),
 
      build_path: "../../_build",
@@ -27,7 +28,6 @@ defmodule Cerlnan.Avro.Mixfile do
     [
      {:lager, "~> 3.2.4"},
      {:poolboy, "~> 1.5.1"},
-     {:uuid, "~> 1.1"}
     ]
   end
 

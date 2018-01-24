@@ -2,7 +2,7 @@
 MIX = MIX
 .DEFAULT_GOAL	:= all
 
-.PHONY: all compile clean-all clean clobber test check deps rel shell xref dialyzer eunit erl iex
+.PHONY: all compile clean-all clean clobber test check deps rel shell xref dialyzer eunit exunit erl iex
 
 all: compile
 
@@ -16,17 +16,21 @@ clean-all: clean
 
 clean:
 	@$(MIX) clean
+	rm -rf apps/*/cover
 
 clobber: clean
 	rm -rf _build
 
-check: xref dialyzer eunit ;
+check: xref dialyzer eunit exunit ;
 
 dialyzer:
 	@$(MIX) dialyzer
 
-eunit:
+exunit:
 	@$(MIX) test --cover
+
+eunit:
+	@$(MIX) eunit --cover
 
 proper:
 	@$(MIX) proper

@@ -1,5 +1,6 @@
 /log
 /apps/*/log
+/apps/*/cover
 /_build
 /rel
 /cover
