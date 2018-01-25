@@ -21,12 +21,9 @@ start_link() ->
 %%====================================================================
 
 init([]) ->
-    PoolArgs = #{
-        host => 'localhost',
-        port => 2002
-     },
-    AvroPool = cerlnan_avro:child_spec(PoolArgs),
-    {ok, { {one_for_one, 5, 10}, [AvroPool]} }.
+    AvroPools = cerlnan_avro:pool_specs(),
+    io:format("Starting: ~p~n", [AvroPools]),
+    {ok, { {one_for_one, 5, 10}, AvroPools} }.
 
 %%====================================================================
 %% Internal functions

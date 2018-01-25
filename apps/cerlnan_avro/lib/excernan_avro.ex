@@ -2,43 +2,53 @@ defmodule ExCernan.Avro do
   @moduledoc """
     Client / connection pool for Cernan's Avro source.
 
-    This module is a pass-through to the cerlnan_avro application.  On
-    startup, a poolboy backed connection pool is created.  This pool and
-    is backing socket semantics are configurable via Application.
-    The following is a listing of the options available to the user:
-        * backend - Backend socket semantics.  Default = :cerlnan_avro_socket_v1.
-        * pool_size - Size of the connection pool to Cernan.  Default = 10.
-        * pool_overflow - Number of overflow workers allowed.  Default = 20.
+    This module is a pass-through to the cerlnan_avro application.
+    On startup, a number of poolbay backed connection pools are created
+    based on Application env.  If no pools are configured by the user, a
+    default pool equivalent to the following config is created:
 
-    For example, to configure the pool size to 50 one would execute:
-        Application.put_env(:cerlnan_avro, pool_size, 50)
+        ```
+          config :cerlnan_avro,
+            pools: [
+              {:cerlnan_avro,
+               %{}
+              }
+            ]
+        ```
 
+    Pool configs are of the form {pool-id :, pool-args} when pool-id: atom,
+    pool-args: map.  pool-args has the following form:
+
+        %{
+          :backend => Backend socket semantics.  Default = :cerlnan_avro_socket_v1.
+          :backend_args => Map of backend specific arguments.  Default = %{}.
+          :pool_size => Size of the connection pool to Cernan.  Default = 10.
+          :pool_overflow => Number of overflow workers allowed.  Default = 20.
+          ...
+        }
   """
 
   @doc """
-    Creates an :cerlnan_avro socket with the default backend.
-  """
-  defdelegate connect(backend_args), to: :cerlnan_avro
+    Publishes the given blob on the default pool.
 
-  @doc """
-    Creates an :cerlnan_avro socket with the specified `backend` from the given `backend_args`.
-  """
-  defdelegate connect(backend, backend_args), to: :cerlnan_avro
-
-  @doc """
-    Publishes the given binary blob via connection pool.
+    Note - This function will result in error when users specify their own
+    named pools.
 
     Returns `:ok`.
   """
   defdelegate publish_blob(blob), to: :cerlnan_avro
 
   @doc """
-    Publishes either directly via an avro socket or via connection pool.
+    Publishes the given binary `blob` via connection the given `pool`..
+
+    Returns `:ok`.
   """
-  defdelegate publish_blob(socket_or_blob, blob_or_args), to: :cerlnan_avro
+  defdelegate publish_blob(pool, blob), to: :cerlnan_avro
 
   @doc """
-    Publishes the given `blob` on `socket` with the given `args`.
+    Publishes the given `blob` on `pool` with the given `args`.
+
+    Returns `:ok`.
   """
   defdelegate publish_blob(socket, blob, args), to: :cerlnan_avro
 end
