@@ -1,5 +1,5 @@
 
-MIX = MIX
+MIX = mix
 .DEFAULT_GOAL	:= all
 
 .PHONY: all compile clean-all clean clobber test check deps rel shell xref dialyzer eunit exunit erl iex
@@ -33,9 +33,6 @@ exunit:
 
 eunit:
 	@$(MIX) eunit --cover
-
-proper:
-	@$(MIX) proper
 
 xref:
 	@$(MIX) xref graph
