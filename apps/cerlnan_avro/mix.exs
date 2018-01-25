@@ -28,6 +28,7 @@ defmodule Cerlnan.Avro.Mixfile do
     [
      {:lager, "~> 3.2.4"},
      {:poolboy, "~> 1.5.1"},
+     {:erlavro, "~> 2.4.0"},
     ]
   end
 

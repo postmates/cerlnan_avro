@@ -26,13 +26,13 @@
 %%====================================================================
 
 -callback init(Args::map()) -> {ok, any()} | {error, any()}.
--callback publish_blob(Blob::binary(), Args::map(), State::any()) -> {ok, any()} | {error, Reason::any()}.
+-callback publish_blob(Blob::iodata(), Args::map(), State::any()) -> {ok, any()} | {error, Reason::any()}.
 
 %%====================================================================
 %% API
 %%====================================================================
 
--spec publish_blob(pid(), binary(), map()) -> ok.
+-spec publish_blob(pid(), iodata(), map()) -> ok.
 publish_blob(Socket, Blob, Args) ->
 	gen_server:call(Socket, {publish_blob, Blob, Args}).
 

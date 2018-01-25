@@ -48,7 +48,7 @@ init(Args) ->
     {ok, Sock} = gen_tcp:connect(Host, Port, SOpts, ConnectTimeout),
     {ok, #{socket=>Sock, read_timeout=>ReadTimeout}}.
 
--spec publish_blob(binary(), v1_publish_args(), v1_state()) -> {ok, v1_state()}.
+-spec publish_blob(iodata(), v1_publish_args(), v1_state()) -> {ok, v1_state()}.
 publish_blob(Blob, Args, State=#{socket:=Sock, read_timeout:=ReadTimeout}) ->
     {Id, Payload} = payload(Blob, Args),
     ok = gen_tcp:send(Sock, Payload),
