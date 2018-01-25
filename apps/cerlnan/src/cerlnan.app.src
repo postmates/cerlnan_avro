@@ -1,0 +1,19 @@
+{application, cerlnan,
+ [
+  {description, "Erlang client for all things cernan"},
+  {vsn, "0.0.1"},
+  {registered, []},
+  {mod, {cerlnan_app, []}},
+  {applications,
+   [
+    kernel,
+    stdlib
+   ]},
+  {env,[]},
+  {modules, []},
+
+  {maintainers, []},
+  {licenses, []},
+  {links, []}
+ ]
+}.
