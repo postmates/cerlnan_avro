@@ -5,7 +5,7 @@
 % Why?  erlavro's API currently only supports writing to files.
 
 % External API
--export([open/0, close/1]).
+-export([open/0, close/1, close/2]).
 
 % Internal API - exported out of necessity.
 -export([init/0, loop/1]).
@@ -26,12 +26,19 @@
 open() ->
     start_link().
 
--spec close(buffer()) -> iodata().
+-spec close(buffer()) -> {ok, iodata()} | {error, term()}.
 close(Buffer) ->
+    close(Buffer, 1000).
+
+-spec close(buffer(), undefined | non_neg_integer()) -> {ok, iodata()} | {error, term()}.
+close(Buffer, Timeout) ->
     Buffer ! {close, self()},
     receive
         {Buffer, Bytes} ->
-            Bytes
+            {ok, Bytes}
+    after
+        Timeout ->
+            {error, buffer_unresponsive}
     end.
 
 %%====================================================================
@@ -86,11 +93,13 @@ put_chars(Chars, IoList) ->
 %% Tests
 %%====================================================================
 
+-ifdef(TEST).
+
 -include_lib("eunit/include/eunit.hrl").
 
 open_close_test() ->
     Buffer = open(),
-    [] = close(Buffer).
+    {ok, []} = close(Buffer).
 
 ordering_test() ->
     Buffer = open(),
@@ -98,4 +107,7 @@ ordering_test() ->
     [ok = file:write(Buffer, Write) || Write <- Writes],
 
     WritesBin = iolist_to_binary(Writes),
-    WritesBin = iolist_to_binary(close(Buffer)).
+    {ok, IoList} = close(Buffer),
+    WritesBin = iolist_to_binary(IoList).
+
+-endif.

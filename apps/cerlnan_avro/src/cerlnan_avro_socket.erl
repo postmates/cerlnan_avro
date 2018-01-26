@@ -72,6 +72,8 @@ handle_cast(_, State) ->
 %% Tests
 %%====================================================================
 
+-ifdef(TEST).
+
 -include_lib("eunit/include/eunit.hrl").
 
 init_test() ->
@@ -97,3 +99,5 @@ publish_blob_test() ->
     {ok, Pid} = start_link(Args),
     ok = publish_blob(Pid, <<>>, #{}),
     exit(Pid, normal).
+
+-endif.

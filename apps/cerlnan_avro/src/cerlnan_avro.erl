@@ -49,34 +49,47 @@ child_spec(PoolId, PoolArgs) when is_atom(child_spec), is_map(PoolArgs) ->
     },
     poolboy:child_spec(?MODULE, PoolboyArgs, SocketArgs).
 
--spec publish(binary(), cerlnan_avro_schema:type_or_name(), native_avro_term()) -> ok.
+-spec publish(binary(), cerlnan_avro_schema:type_or_name(), native_avro_term()) -> ok | {error, term()}.
 publish(Type, Schema, Record) ->
     publish(?MODULE, Type, Schema, Record, #{}).
 
--spec publish(pool(), binary(), cerlnan_avro_schema:type_or_name(), native_avro_term()) -> ok.
+-spec publish(pool(), binary(), cerlnan_avro_schema:type_or_name(), native_avro_term()) -> ok | {error, term()}.
 publish(Pool, Type, Schema, Record) when is_atom(Pool) ->
     publish(Pool, Type, Schema, Record, #{});
 publish(Type, Schema, Record, Args) ->
     publish(?MODULE, Type, Schema, Record, Args).
 
--spec publish(pool(), binary(), cerlnan_avro_schema:type_or_name(), native_avro_term(), map()) -> ok.
+-spec publish(pool(), binary(), cerlnan_avro_schema:type_or_name(), native_avro_term(), map()) -> ok | {error, term()}.
 publish(Pool, Type, Schema, RecordOrRecords, Args) when is_list(RecordOrRecords) ->
     Meta = [],
     Header = avro_ocf:make_header(Schema, Meta),
     Encoder = avro:make_encoder(Schema, [{encoding, avro_binary}]),
-    RecordBlock =
-        case RecordOrRecords of
-            Records = [H|_] when is_list(H) ->
-                [Encoder(Type, Record) || Record <- Records];
-            Record ->
-                [Encoder(Type, Record)]
-        end,
-
     Buffer = cerlnan_avro_byte_buffer:open(),
-    ok = avro_ocf:write_header(Buffer, Header),
-    ok = avro_ocf:append_file(Buffer, Header, RecordBlock),
-    IoList = cerlnan_avro_byte_buffer:close(Buffer),
-    publish_blob(Pool, IoList, Args).
+
+    try
+        RecordBlock =
+            case RecordOrRecords of
+                Records = [H|_] when is_list(H) ->
+                    [Encoder(Type, Record) || Record <- Records];
+                Record ->
+                    [Encoder(Type, Record)]
+            end,
+        ok = avro_ocf:write_header(Buffer, Header),
+        ok = avro_ocf:append_file(Buffer, Header, RecordBlock),
+        {ok, IoList} = cerlnan_avro_byte_buffer:close(Buffer),
+        publish_blob(Pool, IoList, Args)
+    catch
+        Class:Reason ->
+            % This is ugly, however erlavro likes to crash for
+            % a number of reasons.  To ensure we always return,
+            % we snag whatever goes wrong and wrap it into
+            % a generic error type.
+            _ = lager:error(
+                "~nStacktrace:~s",
+                [lager:pr_stacktrace(erlang:get_stacktrace(), {Class, Reason})]
+             ),
+            {error, {serialization_failed, Reason}}
+    end.
 
 -spec publish_blob(iodata()) -> ok.
 publish_blob(Blob) ->
@@ -98,6 +111,8 @@ publish_blob(Pool, Blob, Args) ->
 %% Tests
 %%====================================================================
 
+-ifdef(TEST).
+
 -include_lib("eunit/include/eunit.hrl").
 
 cerlnan_avro_test_() ->
@@ -112,7 +127,8 @@ cerlnan_avro_test_() ->
             application:stop(cerlnan_avro)
         end,
         [fun publish_blob_basic/0,
-         fun publish_basic/0]
+         fun publish_basic/0,
+         fun publish_bad_value/0]
     }.
 
 publish_blob_basic() ->
@@ -129,3 +145,15 @@ publish_basic() ->
     User1 = [{name, "Foo Bar"}, {favorite_number, 10}, {favorite_color, "maroon"}],
     User2 = [{name, "Alice Bob"}, {favorite_number, 32}, {favorite_color, "greenish-gold"}],
     ok = publish("example.avro.User", UserSchema, [User1, User2]).
+
+publish_bad_value() ->
+    UserSchema =
+        cerlnan_avro_schema:record(
+            <<"User">>,
+            [cerlnan_avro_schema:field(name, string),
+             cerlnan_avro_schema:field(favorite_number, int),
+             cerlnan_avro_schema:field(favorite_color, string)],
+            [{namespace, 'example.avro'}]),
+    User1 = [{name, "Foo Bar"}, {favourite_number, 10}, {favourite_color, "maroon"}],
+    {error, {serialization_failed, _}} = publish("example.avro.User", UserSchema, [User1]).
+-endif.

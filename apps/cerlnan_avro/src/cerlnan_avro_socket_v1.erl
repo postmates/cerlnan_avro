@@ -105,6 +105,8 @@ wait_for_ack(Sock, Id, ReadTimeout) ->
 %% Tests
 %%====================================================================
 
+-ifdef(TEST).
+
 -include_lib("eunit/include/eunit.hrl").
 
 header_test() ->
@@ -256,3 +258,5 @@ publish_blob_sync_timeout_crashes_test() ->
             ok
     end,
     exit(AckPid, normal).
+
+-endif.
