@@ -9,7 +9,7 @@
 -define(CONTROL_SYNC, 1).
 
 %%====================================================================
-%% Custom Types
+%% Types
 %%====================================================================
 
 -type v1_state() ::
@@ -50,7 +50,7 @@ init(Args) ->
 
 -spec publish_blob(iodata(), v1_publish_args(), v1_state()) -> {ok, v1_state()}.
 publish_blob(Blob, Args, State=#{socket:=Sock, read_timeout:=ReadTimeout}) ->
-    {Id, Payload} = payload(Blob, Args),
+    {Id, Payload} = payload(iolist_to_binary(Blob), Args),
     ok = gen_tcp:send(Sock, Payload),
 
     case maps:is_key(id, Args) of
@@ -195,7 +195,7 @@ ack_server(Listen, N) ->
 timeout_server(Listen, 0) ->
     ok = gen_tcp:close(Listen);
 timeout_server(Listen, N) ->
-    {ok, Sock} = gen_tcp:accept(Listen),
+    {ok, _Sock} = gen_tcp:accept(Listen),
     timer:sleep(5000),
     case N of
         undefined ->

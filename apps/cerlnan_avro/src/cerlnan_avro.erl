@@ -41,17 +41,17 @@ child_spec(PoolId, PoolArgs) when is_atom(child_spec), is_map(PoolArgs) ->
     },
     poolboy:child_spec(?MODULE, PoolboyArgs, SocketArgs).
 
--spec publish(string(),  avro:schema_all(), term()) -> ok.
+-spec publish(binary(),  avro:schema_all(), term()) -> ok.
 publish(Type, Schema, Record) ->
     publish(?MODULE, Type, Schema, Record, #{}).
 
--spec publish(pool(), string(),  avro:schema_all(), term()) -> ok.
+-spec publish(pool(), binary(),  avro:schema_all(), term()) -> ok.
 publish(Pool, Type, Schema, Record) when is_atom(Pool) ->
     publish(Pool, Type, Schema, Record, #{});
 publish(Type, Schema, Record, Args) ->
     publish(?MODULE, Type, Schema, Record, Args).
 
--spec publish(pool(), string(),  avro:schema_all(), term(), map()) -> ok.
+-spec publish(pool(), binary(),  avro:schema_all(), term(), map()) -> ok.
 publish(Pool, Type, Schema, RecordOrRecords, Args) when is_list(RecordOrRecords) ->
     Meta = [],
     Header = avro_ocf:make_header(Schema, Meta),
@@ -112,13 +112,12 @@ publish_blob_basic() ->
 
 publish_basic() ->
     UserSchema =
-        avro_record:type(
-        <<"User">>,
-        [avro_record:define_field(name, string),
-         avro_record:define_field(favorite_number, int),
-         avro_record:define_field(favorite_color, string)],
-        [{namespace, 'example.avro'}
-        ]),
+        cerlnan_avro_schema:record(
+            <<"User">>,
+            [cerlnan_avro_schema:field(name, string),
+             cerlnan_avro_schema:field(favorite_number, int),
+             cerlnan_avro_schema:field(favorite_color, string)],
+            [{namespace, 'example.avro'}]),
     User1 = [{name, "Foo Bar"}, {favorite_number, 10}, {favorite_color, "maroon"}],
     User2 = [{name, "Alice Bob"}, {favorite_number, 32}, {favorite_color, "greenish-gold"}],
     ok = publish("example.avro.User", UserSchema, [User1, User2]).
