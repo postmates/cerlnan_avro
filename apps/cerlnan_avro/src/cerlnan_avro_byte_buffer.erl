@@ -49,7 +49,7 @@ loop(Bytes) ->
     {io_request, From, ReplyAs, Request} ->
         case request(Request,Bytes) of
             {Tag, Reply, NewBytes} when Tag =:= ok; Tag =:= error ->
-                reply(From, ReplyAs, Reply),
+                _ = reply(From, ReplyAs, Reply),
                 ?MODULE:loop(NewBytes)
         end;
     {close, From} ->
@@ -88,7 +88,7 @@ put_chars(Chars, IoList) ->
 
 -include_lib("eunit/include/eunit.hrl").
 
-new_close_test() ->
+open_close_test() ->
     Buffer = open(),
     [] = close(Buffer).
 

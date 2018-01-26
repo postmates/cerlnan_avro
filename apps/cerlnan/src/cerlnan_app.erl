@@ -9,7 +9,7 @@
 %%====================================================================
 
 start(_StartType, _StartArgs) ->
-    start_client_apps(),
+    _ = start_client_apps(),
     cerlnan_sup:start_link().
 
 stop(_State) ->

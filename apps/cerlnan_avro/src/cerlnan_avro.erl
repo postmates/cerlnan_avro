@@ -10,7 +10,15 @@
 
 -opaque pool() :: atom().
 
--export_type([pool/0]).
+-type native_avro_term() :: null
+    | boolean()
+    | integer()
+    | float()
+    | iolist()
+    | [native_avro_term()]
+    | [{cerlnan_avro_schema:name_raw(), native_avro_term()}].
+
+-export_type([pool/0, native_avro_term/0]).
 
 %%====================================================================
 %% API
@@ -41,17 +49,17 @@ child_spec(PoolId, PoolArgs) when is_atom(child_spec), is_map(PoolArgs) ->
     },
     poolboy:child_spec(?MODULE, PoolboyArgs, SocketArgs).
 
--spec publish(binary(),  avro:schema_all(), term()) -> ok.
+-spec publish(binary(), cerlnan_avro_schema:type_or_name(), native_avro_term()) -> ok.
 publish(Type, Schema, Record) ->
     publish(?MODULE, Type, Schema, Record, #{}).
 
--spec publish(pool(), binary(),  avro:schema_all(), term()) -> ok.
+-spec publish(pool(), binary(), cerlnan_avro_schema:type_or_name(), native_avro_term()) -> ok.
 publish(Pool, Type, Schema, Record) when is_atom(Pool) ->
     publish(Pool, Type, Schema, Record, #{});
 publish(Type, Schema, Record, Args) ->
     publish(?MODULE, Type, Schema, Record, Args).
 
--spec publish(pool(), binary(),  avro:schema_all(), term(), map()) -> ok.
+-spec publish(pool(), binary(), cerlnan_avro_schema:type_or_name(), native_avro_term(), map()) -> ok.
 publish(Pool, Type, Schema, RecordOrRecords, Args) when is_list(RecordOrRecords) ->
     Meta = [],
     Header = avro_ocf:make_header(Schema, Meta),

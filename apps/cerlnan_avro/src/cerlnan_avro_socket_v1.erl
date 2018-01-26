@@ -221,7 +221,7 @@ publish_blob_echo_test() ->
     },
     {ok, State=#{socket:=Socket}} = init(InitArgs),
     Blob = <<"1234567890">>,
-    publish_blob(Blob, #{}, State),
+    {ok, _} = publish_blob(Blob, #{}, State),
 
     {ok, Payload} = recv_payload(Socket),
     <<_:4/binary, _:4/binary, _:4/binary, _:8/binary, _:8/binary, Blob/binary>> = Payload,

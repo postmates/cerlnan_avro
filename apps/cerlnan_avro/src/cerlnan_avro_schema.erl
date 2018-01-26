@@ -17,14 +17,16 @@
 %%====================================================================
 
 -type name() :: avro:name().
--type type() :: avro:type().
+-type name_raw() :: atom() | string() | binary().
+-type type() :: avro:avro_type().
+-type type_or_name() :: type() | name_raw().
 -opaque record() :: avro:record_type().
 -type record_opt_name() :: doc | namespace | aliases.
 -type record_opt() :: {record_opt_name(), term()}.
--opaque field() :: avro:field_type().
+-opaque field() :: avro:record_field().
 -type field_opt_name() :: doc | order | default | aliases.
 -type field_opt() :: {field_opt_name(), term()}.
--opaque avro_map() :: avro:map_type().
+-opaque avro_map() :: #avro_map_type{}.
 -type custom_prop() :: {binary(), number() | binary() | [binary()]}.
 -opaque array() :: avro:array_type().
 -opaque union() :: avro:union_type().
@@ -34,7 +36,9 @@
 
 -export_type(
    [name/0,
+    name_raw/0,
     type/0,
+    type_or_name/0,
     record/0,
     field/0,
     avro_map/0,
@@ -51,15 +55,15 @@
 record(Name, Fields) ->
     record(Name, Fields, []).
 
--spec record(name(), [field()], [record_opt()]) -> record().
+-spec record(name_raw(), [field()], [record_opt()]) -> record().
 record(Name, Fields, Options) ->
     avro_record:type(Name, Fields, Options).
 
--spec field(name(), type() | name()) -> field().
+-spec field(name_raw(), type() | name_raw()) -> field().
 field(Name, TypeOrName) ->
     field(Name, TypeOrName, []).
 
--spec field(name(), type() | name(), [field_opt()]) -> field().
+-spec field(name_raw(), type() | name_raw(), [field_opt()]) -> field().
 field(Name, TypeOrName, Options) ->
     avro_record:define_field(Name, TypeOrName, Options).
 
