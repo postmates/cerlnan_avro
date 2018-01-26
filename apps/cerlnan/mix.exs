@@ -4,7 +4,6 @@ defmodule Cerlnan.Mixfile do
   def project do
     [app: :cerlnan,
      version: "0.0.1",
-     elixir: "~> 1.0",
      language: :erlang,
      env: [{:clients, []}],
      deps: deps(),

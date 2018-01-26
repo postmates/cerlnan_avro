@@ -5,9 +5,10 @@ defmodule CerlnanUmbrella.Mixfile do
     [
       apps_path: "apps",
       preferred_cli_env: [eunit: :test],
-      eunit: [
-        verbose: true,
-        cover: true,
+      dialyzer: [
+        plt_add_apps: [:erlavro, :poolboy],
+        flags: [:unmatched_returns,:error_handling,:race_conditions, :no_opaque],
+        paths: ["_build/dev/lib/cerlnan/ebin", "_build/dev/lib/cerlnan_avro/ebin"]
       ],
       deps: deps()
     ]

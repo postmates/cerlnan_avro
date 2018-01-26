@@ -7,5 +7,5 @@
 init(Map) when is_map(Map) ->
     {ok, #{}}.
 
-publish_blob(Blob, Args, State) when is_binary(Blob), is_map(Args), is_map(State) ->
+publish_blob(Blob, Args, State) when is_binary(Blob) ; is_list(Blob), is_map(Args), is_map(State) ->
     {ok, State}.

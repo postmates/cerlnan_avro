@@ -26,13 +26,13 @@
 %%====================================================================
 
 -callback init(Args::map()) -> {ok, any()} | {error, any()}.
--callback publish_blob(Blob::binary(), Args::map(), State::any()) -> {ok, any()} | {error, Reason::any()}.
+-callback publish_blob(Blob::iodata(), Args::map(), State::any()) -> {ok, any()} | {error, Reason::any()}.
 
 %%====================================================================
 %% API
 %%====================================================================
 
--spec publish_blob(pid(), binary(), map()) -> ok.
+-spec publish_blob(pid(), iodata(), map()) -> ok.
 publish_blob(Socket, Blob, Args) ->
 	gen_server:call(Socket, {publish_blob, Blob, Args}).
 
@@ -72,6 +72,8 @@ handle_cast(_, State) ->
 %% Tests
 %%====================================================================
 
+-ifdef(TEST).
+
 -include_lib("eunit/include/eunit.hrl").
 
 init_test() ->
@@ -97,3 +99,5 @@ publish_blob_test() ->
     {ok, Pid} = start_link(Args),
     ok = publish_blob(Pid, <<>>, #{}),
     exit(Pid, normal).
+
+-endif.
