@@ -30,8 +30,7 @@
 
 -spec open() -> buffer().
 open() ->
-    {ok, Pid} = gen_server:start_link(?MODULE, ok, []),
-    Pid.
+    gen_server:start_link(?MODULE, ok, []).
 
 -spec close(buffer()) -> {ok, iodata()} | {error, term()}.
 close(Buffer) ->
@@ -101,11 +100,11 @@ put_chars(Chars, IoList) ->
 -include_lib("eunit/include/eunit.hrl").
 
 open_close_test() ->
-    Buffer = open(),
+    {ok, Buffer} = open(),
     {ok, []} = close(Buffer).
 
 ordering_test() ->
-    Buffer = open(),
+    {ok, Buffer} = open(),
     Writes = [<<"1">>, <<"23456">>, <<"789">>, <<"0">>],
     [ok = file:write(Buffer, Write) || Write <- Writes],
 
