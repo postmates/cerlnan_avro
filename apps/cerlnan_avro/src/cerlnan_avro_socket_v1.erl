@@ -28,7 +28,7 @@
 
 -type v1_publish_args() ::
     #{
-      id => undefined | term(),
+      sync => boolean(),
       sort_by => undefined | term()
     }.
 
@@ -75,12 +75,13 @@ header(ControlValue, IdValue, SortByValue) ->
 payload(Blob, Args) ->
     SortByDefault = rand:uniform(1 bsl 64),
     SortBy = erlang:phash2(maps:get(sort_by, Args, SortByDefault)),
-    {Control, Id}  =
-        case maps:get(id, Args, undefined) of
-            undefined ->
-                {0, rand:uniform(1 bsl 32)};
-            Term ->
-                {?CONTROL_SYNC, erlang:phash2(Term)}
+    Id = rand:uniform(1 bsl 32),
+    Control  =
+        case maps:get(sync, Args, true) of
+            false ->
+                0;
+            true ->
+                ?CONTROL_SYNC
         end,
 
     Header = header(Control, Id, SortBy),
@@ -122,9 +123,8 @@ header_test() ->
     <<>> = Header5.
 
 payload_default_sort_by_unique_test() ->
-    Id = 1,
     Args = #{
-      id => Id
+      sync => true
     },
 
     {_, [_, Payload]} = payload(<<>>, Args),
@@ -135,9 +135,26 @@ payload_default_sort_by_unique_test() ->
 
     ?assert(SortBy /= SortBy2).
 
-payload_async_by_default_test() ->
+payload_sync_by_default_test() ->
     SortBy = 10,
     Args = #{
+      sort_by => SortBy
+    },
+
+    {_, [_, Payload]} = payload(<<>>, Args),
+    <<?VERSION:4/big-unsigned-integer-unit:8, Payload2/binary>> = Payload,
+    <<1:4/big-unsigned-integer-unit:8, Payload3/binary>> = Payload2,
+
+    <<_Id:8/binary, Payload4/binary>> = Payload3,
+
+    ExpectedSortBy = erlang:phash2(SortBy),
+    <<ExpectedSortBy:8/big-unsigned-integer-unit:8, Payload5/binary>> = Payload4,
+    <<>> = Payload5.
+
+payload_async_test() ->
+    SortBy = 10,
+    Args = #{
+      sync => false,
       sort_by => SortBy
     },
 
@@ -231,13 +248,12 @@ publish_blob_echo_test() ->
 
 publish_blob_sync_happy_path_test() ->
     {AckPid, AckPort} = spawn_server(fun ack_server/2, 1),
-    Id = 1,
     InitArgs = #{
         host => {127, 0, 0, 1},
         port => AckPort
     },
     {ok, State} = init(InitArgs),
-    {ok, _} = publish_blob(<<>>, #{id=>Id}, State),
+    {ok, _} = publish_blob(<<>>, #{sync=>true}, State),
     exit(AckPid, normal).
 
 publish_blob_sync_timeout_crashes_test() ->
