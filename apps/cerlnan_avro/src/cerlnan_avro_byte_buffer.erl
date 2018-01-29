@@ -1,4 +1,5 @@
 -module(cerlnan_avro_byte_buffer).
+-behaviour(gen_server).
 
 % An imposter for file descriptor, supporting only writes.
 %
@@ -7,8 +8,13 @@
 % External API
 -export([open/0, close/1, close/2]).
 
-% Internal API - exported out of necessity.
--export([init/0, loop/1]).
+%% gen_server callbacks
+-export([init/1,
+         handle_call/3,
+         handle_cast/2,
+         handle_info/2,
+         terminate/2,
+         code_change/3]).
 
 %%====================================================================
 %% Custom Types
@@ -24,7 +30,7 @@
 
 -spec open() -> buffer().
 open() ->
-    start_link().
+    gen_server:start_link(?MODULE, ok, []).
 
 -spec close(buffer()) -> {ok, iodata()} | {error, term()}.
 close(Buffer) ->
@@ -32,39 +38,35 @@ close(Buffer) ->
 
 -spec close(buffer(), undefined | non_neg_integer()) -> {ok, iodata()} | {error, term()}.
 close(Buffer, Timeout) ->
-    Buffer ! {close, self()},
-    receive
-        {Buffer, Bytes} ->
-            {ok, Bytes}
-    after
-        Timeout ->
-            {error, buffer_unresponsive}
-    end.
+    gen_server:call(Buffer, close, Timeout).
 
+%%====================================================================
+%% GenServer callbacks
+%%====================================================================
+
+init(_) ->
+    {ok, []}.
+
+handle_call(close, _From, State) ->
+    {stop, normal, {ok, State}, State}.
+
+handle_cast(_Req, State) ->
+    {noreply, State}.
+
+handle_info({io_request, From, ReplyAs, Request}, State) ->
+    {Tag, Reply, NewState} = request(Request, State),
+    true = Tag =:= ok orelse Tag =:= error,
+    _ = reply(From, ReplyAs, Reply),
+    {noreply, NewState}.
+
+terminate(_Reason, _State) ->
+    ok.
+
+code_change(_OldVsn, State, _Extra) ->
+        {ok, State}.
 %%====================================================================
 %% Internal
 %%====================================================================
-
-start_link() ->
-    spawn_link(?MODULE,init,[]).
-
-init() ->
-    ?MODULE:loop([]).
-
-loop(Bytes) ->
-    receive
-    {io_request, From, ReplyAs, Request} ->
-        case request(Request,Bytes) of
-            {Tag, Reply, NewBytes} when Tag =:= ok; Tag =:= error ->
-                _ = reply(From, ReplyAs, Reply),
-                ?MODULE:loop(NewBytes)
-        end;
-    {close, From} ->
-        From ! {self(), Bytes};
-    _Unknown ->
-        ?MODULE:loop(Bytes)
-    end.
-
 reply(From, ReplyAs, Reply) ->
     From ! {io_reply, ReplyAs, Reply}.
 
@@ -98,11 +100,11 @@ put_chars(Chars, IoList) ->
 -include_lib("eunit/include/eunit.hrl").
 
 open_close_test() ->
-    Buffer = open(),
+    {ok, Buffer} = open(),
     {ok, []} = close(Buffer).
 
 ordering_test() ->
-    Buffer = open(),
+    {ok, Buffer} = open(),
     Writes = [<<"1">>, <<"23456">>, <<"789">>, <<"0">>],
     [ok = file:write(Buffer, Write) || Write <- Writes],
 

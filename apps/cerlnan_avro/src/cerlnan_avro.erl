@@ -64,7 +64,7 @@ publish(Pool, Type, Schema, RecordOrRecords, Args) when is_list(RecordOrRecords)
     Meta = [],
     Header = avro_ocf:make_header(Schema, Meta),
     Encoder = avro:make_encoder(Schema, [{encoding, avro_binary}]),
-    Buffer = cerlnan_avro_byte_buffer:open(),
+    {ok, Buffer} = cerlnan_avro_byte_buffer:open(),
 
     try
         RecordBlock =
