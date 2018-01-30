@@ -29,7 +29,7 @@
 -type v1_publish_args() ::
     #{
       sync => boolean(),
-      sort_by => undefined | term()
+      shard_by => undefined | term()
     }.
 
 -export_type([v1_init_args/0, v1_publish_args/0]).
@@ -74,7 +74,7 @@ header(ControlValue, IdValue, SortByValue) ->
 
 payload(Blob, Args) ->
     SortByDefault = rand:uniform(1 bsl 64),
-    SortBy = erlang:phash2(maps:get(sort_by, Args, SortByDefault)),
+    SortBy = erlang:phash2(maps:get(shard_by, Args, SortByDefault)),
     Id = rand:uniform(1 bsl 32),
     Control  =
         case maps:get(sync, Args, true) of
@@ -122,7 +122,7 @@ header_test() ->
     <<SortBy:8/big-unsigned-integer-unit:8, Header5/binary>> = Header4,
     <<>> = Header5.
 
-payload_default_sort_by_unique_test() ->
+payload_default_shard_by_unique_test() ->
     Args = #{
       sync => true
     },
@@ -138,7 +138,7 @@ payload_default_sort_by_unique_test() ->
 payload_sync_by_default_test() ->
     SortBy = 10,
     Args = #{
-      sort_by => SortBy
+      shard_by => SortBy
     },
 
     {_, [_, Payload]} = payload(<<>>, Args),
@@ -155,7 +155,7 @@ payload_async_test() ->
     SortBy = 10,
     Args = #{
       sync => false,
-      sort_by => SortBy
+      shard_by => SortBy
     },
 
     {_, [_, Payload]} = payload(<<>>, Args),

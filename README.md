@@ -1,6 +1,14 @@
 # cerlnan
 
-An Erlang client for [Cernan](https://github.com/postmates/cernan).
+An Erlang / Elixir client for [Cernan](https://github.com/postmates/cernan).
+
+## Available Clients
+
+* Avro - [cerlnan_avro](./apps/cerlnan_avro/README.md) 
+
+## Usage
+
+See documentation for the specific client listed in [Available Clients](#available-clients).
 
 ## Developing
 
@@ -16,4 +24,18 @@ The following executes only eunit and ExUnit tests:
 
 ```
 make unit
+```
+
+### Start an Interactive Shell
+
+#### Erlang
+
+```
+make erl
+```
+
+#### Elixir
+
+```
+make iex
 ```
