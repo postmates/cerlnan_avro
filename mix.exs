@@ -8,7 +8,7 @@ defmodule CerlnanUmbrella.Mixfile do
       dialyzer: [
         plt_add_apps: [:erlavro, :poolboy],
         flags: [:unmatched_returns,:error_handling,:race_conditions, :no_opaque],
-        paths: ["_build/dev/lib/cerlnan/ebin", "_build/dev/lib/cerlnan_avro/ebin"]
+        paths: ["_build/dev/lib/cerlnan_avro/ebin"]
       ],
       deps: deps()
     ]
