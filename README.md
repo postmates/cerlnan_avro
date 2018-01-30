@@ -1,5 +1,7 @@
 # cerlnan
 
+[![Build Status](https://travis-ci.org/postmates/cerlnan.svg?branch=master)](https://travis-ci.org/postmates/cerlnan)
+
 An Erlang / Elixir client for [Cernan](https://github.com/postmates/cernan).
 
 ## Available Clients
