@@ -1,11 +1,13 @@
 -module(cerlnan_avro_socket).
--behaviour(gen_server).
+-behavior(gen_server).
 
 % API
 -export([publish_blob/3]).
 
 % gen_server callbacks
--export([start/1, start_link/1, init/1, handle_call/3, handle_cast/2]).
+-export([start/1, start_link/1, init/1,
+         handle_call/3, handle_cast/2, handle_info/2,
+         code_change/3, terminate/2]).
 
 -define(CERLNAN_AVRO_DEFAULT_BACKEND, cerlnan_avro_socket_v1).
 
@@ -67,6 +69,15 @@ handle_call({publish_blob, Blob, Args}, _From, State=#{backend:=Backend, backend
 
 handle_cast(_, State) ->
     {noreply, State}.
+
+handle_info(_, State) ->
+    {noreply, State}.
+
+code_change(_, _, State) ->
+    {ok, State}.
+
+terminate(_, _State) ->
+    ok.
 
 %%====================================================================
 %% Tests

@@ -1,5 +1,5 @@
 -module(cerlnan_avro_byte_buffer).
--behaviour(gen_server).
+-behavior(gen_server).
 
 % An imposter for file descriptor, supporting only writes.
 %
@@ -28,7 +28,7 @@
 %% API
 %%====================================================================
 
--spec open() -> buffer().
+-spec open() -> {ok, buffer()} | ignore | {error, term()}.
 open() ->
     gen_server:start_link(?MODULE, ok, []).
 
