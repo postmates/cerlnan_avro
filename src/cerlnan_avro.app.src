@@ -1,6 +1,6 @@
 {application, cerlnan_avro,
  [
-  {description, "Erlang client for cernan's avro source."},
+  {description, "Erlang client for Cernan's avro source."},
   {vsn, "0.0.1"},
   {registered, [cerlnan_avro]},
   {mod, {cerlnan_avro_app, []}},
@@ -15,6 +15,6 @@
   {maintainers, ["Postmates"]},
   {licenses, ["MIT"]},
   {build_tools, ["rebar3"]},
-  {links, [{"Github", "https://github.com/postmates/cerlnan"}]}
+  {links, [{"Github", "https://github.com/postmates/cerlnan_avro"}]}
  ]
 }.
