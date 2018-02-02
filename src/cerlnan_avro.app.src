@@ -2,18 +2,19 @@
  [
   {description, "Erlang client for cernan's avro source."},
   {vsn, "0.0.1"},
-  {registered, []},
+  {registered, [cerlnan_avro]},
   {mod, {cerlnan_avro_app, []}},
   {applications,
    [
     kernel,
-    stdlib
+    stdlib,
+    lager
    ]},
   {env,[]},
   {modules, []},
-
-  {maintainers, []},
-  {licenses, []},
-  {links, []}
+  {maintainers, ["Postmates"]},
+  {licenses, ["MIT"]},
+  {build_tools, ["rebar3"]},
+  {links, [{"Github", "https://github.com/postmates/cerlnan"}]}
  ]
 }.

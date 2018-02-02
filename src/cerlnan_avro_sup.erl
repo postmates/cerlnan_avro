@@ -21,7 +21,6 @@ start_link() ->
 
 init([]) ->
     AvroPools = cerlnan_avro:pool_specs(),
-    io:format("Starting: ~p~n", [AvroPools]),
     {ok, { {one_for_one, 5, 10}, AvroPools} }.
 
 %%====================================================================
