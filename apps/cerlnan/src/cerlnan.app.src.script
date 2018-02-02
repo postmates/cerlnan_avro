@@ -1,0 +1,3 @@
+{ok, ExpandAll} = file:script("./scripts/expand_all.script"),
+[App|_] = ExpandAll(ExpandAll, CONFIG, []),
+App.

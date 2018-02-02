@@ -1,21 +1,20 @@
-
-MIX = mix
+REBAR3 = $(CURDIR)/bin/rebar3
 .DEFAULT_GOAL	:= all
 
-.PHONY: all compile clean-all clean clobber test check deps rel shell xref dialyzer eunit exunit erl iex
+.PHONY: all compile clean-all clean clobber test check deps rel shell xref dialyzer eunit shell
 
 all: compile
 
 compile: deps
-	@$(MIX) compile
+	@$(REBAR3) compile
 
 deps:
-	@$(MIX) deps.get
+	@$(REBAR3) deps
 
 clean-all: clean
 
 clean:
-	@$(MIX) clean
+	@$(REBAR3) clean
 	rm -rf apps/*/cover
 
 clobber: clean
@@ -24,21 +23,13 @@ clobber: clean
 check: xref dialyzer unit ;
 
 dialyzer:
-	@$(MIX) dialyzer
+	@$(REBAR3) dialyzer
 
-unit: eunit exunit ;
-
-exunit:
-	@$(MIX) test --cover
-
-eunit:
-	@$(MIX) eunit --cover
+unit:
+	@$(REBAR3) eunit --cover
 
 xref:
-	@$(MIX) xref graph
+	@$(REBAR3) xref graph
 
-iex: compile
-	iex -S mix
-
-erl: compile
-	erl -pa ./_build/dev/lib/*/ebin
+shell: compile
+	rebar3 shell

@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/postmates/cerlnan.svg?branch=master)](https://travis-ci.org/postmates/cerlnan)
 
-An Erlang / Elixir client for [Cernan](https://github.com/postmates/cernan).
+An Erlang client for [Cernan](https://github.com/postmates/cernan).
 
 ## Available Clients
 
@@ -30,14 +30,6 @@ make unit
 
 ### Start an Interactive Shell
 
-#### Erlang
-
 ```
-make erl
-```
-
-#### Elixir
-
-```
-make iex
+make shell
 ```

@@ -1,14 +1,14 @@
-{application, cerlnan_avro,
+{application, cerlnan,
  [
-  {description, "Erlang client for cernan's avro source."},
+  {description, "Erlang client for everything Cernan."},
   {vsn, "0.0.1"},
-  {registered, [cerlnan_avro]},
-  {mod, {cerlnan_avro_app, []}},
+  {registered, []},
+  {mod, {cerlnan_app, []}},
   {applications,
    [
     kernel,
     stdlib,
-    lager
+    {if_not_defined, "CERLNAN_DISABLE_AVRO", cerlnan_avro}
    ]},
   {env,[]},
   {modules, []},

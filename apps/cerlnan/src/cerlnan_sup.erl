@@ -1,4 +1,4 @@
--module(cerlnan_avro_sup).
+-module(cerlnan_sup).
 
 -behaviour(supervisor).
 
@@ -20,8 +20,7 @@ start_link() ->
 %%====================================================================
 
 init([]) ->
-    AvroPools = cerlnan_avro:pool_specs(),
-    {ok, { {one_for_one, 5, 10}, AvroPools} }.
+    {ok, {{one_for_one, 5, 10}, []} }.
 
 %%====================================================================
 %% Internal functions
