@@ -1,12 +1,10 @@
 # cerlnan_avro
 
-An Erlang / Elixir client for Cernan's Avro source.
+An Erlang client for Cernan's Avro source.
 
 ## Usage 
 
 The following examples assume you have an instance of Cernan's Avro source accepting connections on `localhost:2002`.
-
-### Erlang
 
 ```erlang
 application:ensure_all_started(cerlnan_avro).
@@ -30,28 +28,6 @@ ok = publish("example.avro.User", UserSchema, Users).
 ok = publish("example.avro.User", UserSchema, Users, #{sync=>false}).
 ```
 
-### Elixir
-
-```elixir
-schema = ExCernan.Avro.Schema.record(
-  "User",
-  [ExCernan.Avro.Schema.field("name", :string),
-   ExCernan.Avro.Schema.field("favorite_number", :int),
-   ExCernan.Avro.Schema.field("favorite_color", :string)],
- [{:namespace, "example.avro"}])
-
-user1 = [{"name", "Foo Bar"}, {"favorite_number", 10}, {"favorite_color", "maroon"}]
-user2 = [{"name", "Alice Bob"}, {"favorite_number", 32}, {"favorite_color", "greenish-gold"}]
-users = [user1, user2]
-
-# Sync publish users.
-# Blocks until Cernan acknowledges the publication.
-ExCernan.Avro.publish("example.avro.User", schema, users)
-
-# Async publish users.
-ExCernan.Avro.publish("example.avro.User", schema, users, %{:sync => false})
-```
-
 ### Available Publication Options
 
 As illustrated above, users can control various aspects of how their Avro payloads are published
@@ -66,7 +42,7 @@ The following is a full listing of the options currently available by default:
 
 ### Configuring Pools
 
-`cerlnan_avro` and `ExCernan.Avro` both publish via `poolboy` backend connection pools.
+`cerlnan_avro` publishes via `poolboy` backend connection pools.
 
 By default, users are given a single pool which is locally addressable as `cerlnan_avro` initialized with
 default arguments. However, users can make use of their `application` environment to configure their own pools.
@@ -77,8 +53,6 @@ select the pool to publish from are available.
 
 The following examples demonstrate reconfiguring the `cerlnan_avro` pool with 100 connections and 200 overflow workers:
 
-#### Erlang
-
 ```erlang
 [{cerlnan_avro,
     [{pools,
@@ -88,18 +62,6 @@ The following examples demonstrate reconfiguring the `cerlnan_avro` pool with 10
            }}]
      }]
   }]
-```
-
-#### Elixir
-
-```elixir
-    config :cerlnan_avro,
-        pools: [
-            {:cerlnan_avro,
-             %{:pool_size => 100,
-               :pool_overflow => 200
-              }
-            }]
 ```
 
 #### Pool Config
