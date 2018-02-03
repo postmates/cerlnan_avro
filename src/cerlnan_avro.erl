@@ -25,8 +25,7 @@
 %%====================================================================
 
 pools() ->
-    DefaultPool = {?MODULE, #{}},
-    application:get_env(?MODULE, pools, [DefaultPool]).
+    application:get_env(?MODULE, pools, [default_pool()]).
 
 pool_specs() ->
     Pools = pools(),
@@ -107,6 +106,38 @@ publish_blob(Pool, Blob, Args) ->
             cerlnan_avro_socket:publish_blob(Socket, Blob, Args)
         end).
 
+
+%%====================================================================
+%% Internal
+%%====================================================================
+
+to_integer(Binary) when is_binary(Binary) ->
+    binary_to_integer(Binary);
+to_integer(List) when is_list(List) ->
+    list_to_integer(List);
+to_integer(Int) when is_integer(Int) ->
+    Int.
+
+default_pool() ->
+    DefaultPoolSize = os:getenv("CERLNAN_AVRO_POOL_SIZE", "10"),
+    DefaultPoolOverflow = os:getenv("CERLNAN_AVRO_POOL_OVERFLOW", "20"),
+    DefaultHost = os:getenv("CERLNAN_AVRO_HOST", "localhost"),
+    DefaultPort = os:getenv("CERLNAN_AVRO_PORT", "2002"),
+    DefaultConnectTimeout = os:getenv("CERLNAN_AVRO_CONNECT_TIMEOUT", "1000"),
+    DefaultReadTimeout = os:getenv("CERLNAN_AVRO_READ_TIMEOUT", "3000"),
+
+    DefaultOptions =
+        #{pool_size => to_integer(application:get_env(?MODULE, pool_size, DefaultPoolSize)),
+          pool_overflow => to_integer(application:get_env(?MODULE, pool_overflow, DefaultPoolOverflow)),
+          backend_args =>
+            #{host => application:get_env(?MODULE, host, DefaultHost),
+              port => to_integer(application:get_env(?MODULE, port, DefaultPort)),
+              connect_timeout => to_integer(application:get_env(?MODULE, connect_timeout, DefaultConnectTimeout)),
+              read_timeout => to_integer(application:get_env(?MODULE, read_timeout, DefaultReadTimeout))
+             }
+         },
+    {?MODULE, DefaultOptions}.
+
 %%====================================================================
 %% Tests
 %%====================================================================
@@ -114,6 +145,16 @@ publish_blob(Pool, Blob, Args) ->
 -ifdef(TEST).
 
 -include_lib("eunit/include/eunit.hrl").
+
+default_pool_test() ->
+    {?MODULE, PoolConfig} = default_pool(),
+    #{pool_size := 10,
+      pool_overflow := 20,
+      backend_args := BackendArgs} = PoolConfig,
+    #{host := "localhost",
+      port := 2002,
+      connect_timeout := 1000,
+      read_timeout := 3000} = BackendArgs.
 
 cerlnan_avro_test_() ->
     {setup,

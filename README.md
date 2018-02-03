@@ -44,29 +44,65 @@ The following is a full listing of the options currently available by default:
 
 ### Configuring Pools
 
-`cerlnan_avro` publishes via `poolboy` backend connection pools.
+`cerlnan_avro` publishes via `poolboy` backed connection pools.
 
-By default, users are given a single pool which is locally addressable as `cerlnan_avro` initialized with
-default arguments. However, users can make use of their `application` environment to configure their own pools.
+#### Default Pool
+
+By default, users are given a single pool which is locally addressable as `cerlnan_avro`.
+
+Configuration of the default pool can be accomplished via either `application` or
+OS environment.  The following table describes the options available and their default values:
+
+| Application Variable  | Environment Variable          | Default       |
+| :------------------:  | :---------------------------: | :-----------: |
+| host                  | CERLNAN_AVRO_HOST             | localhost     |
+| port                  | CERLNAN_AVRO_PORT             | 2002          |
+| connect_timeout       | CERLNAN_AVRO_CONNECT_TIMEOUT  | 1000          |
+| read_timeout          | CERLNAN_AVRO_READ_TIMEOUT     | 3000          |
+| pool_size             | CERLNAN_AVRO_POOL_SIZE        | 10            |
+| pool_overflow         | CERLNAN_AVRO_POOL_OVERFLOW    | 20            |
+
+For example, the default pool could be explicitly configured by adding the following
+entry to `sys.config`:
+
+```erlang
+{cerlnan_avro,
+ [{pool_size, 10},
+  {pool_overflow, 20},
+  {host, "localhost"},
+  {port, 2002},
+  {connect_timeout, 1000},
+  {read_timeout, 3000}]}
+```
+
+#### Custom Pools
+
+Users can also create their own pools.
 
 **Note** - When not using or configuring a pool named `cerlnan_avro` calls to `publish/3` and `publish/4` will
 no longer work as they assume usage of the `cerlnan_avro` pool.  Variations of these calls which allow users to
 select the pool to publish from are available.
 
-The following examples demonstrate reconfiguring the `cerlnan_avro` pool with 100 connections and 200 overflow workers:
+The previous example is shorthand for:
 
 ```erlang
-[{cerlnan_avro,
-    [{pools,
-        [{cerlnan_avro,
-          #{pool_size => 100,
-            pool_overflow => 200
-           }}]
-     }]
-  }]
+{cerlnan_avro,
+   [{pools,
+       [{cerlnan_avro,
+         #{pool_size => 10,
+           pool_overflow => 20,
+           backend => cerlnan_avro_socket_v1,
+           backend_args =>
+               #{host => "localhost",
+                 port => 2002,
+                 connect_timeout => 1000,
+                 read_timeout => 3000
+                }}}
+       ]}
+   ]}
 ```
 
-#### Pool Config
+#### Pool Configs
 
 Individual pool configs are expressed as `{name: atom(), options: map()}`.  The following options are available.
 
@@ -98,7 +134,7 @@ make check
 
 ### Running Unit Tests
 
-The following executes only eunit and ExUnit tests:
+The following executes only eunit tests:
 
 ```
 make unit

@@ -32,4 +32,4 @@ xref:
 	@$(REBAR3) xref graph
 
 shell: compile
-	rebar3 shell
+	@$(REBAR3) shell
