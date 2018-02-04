@@ -40,8 +40,8 @@
 
 -spec init(v1_init_args()) -> {ok, v1_state()}.
 init(Args) ->
-    Host = maps:get(host, Args, localhost),
-    Port = maps:get(port, Args, 2002),
+    Host = to_host(maps:get(host, Args, localhost)),
+    Port = to_port(maps:get(port, Args, 2002)),
     ConnectTimeout = maps:get(connect_timeout, Args, 1000),
     ReadTimeout = maps:get(read_timeout, Args, 3000),
     SOpts = [binary, {active, false}, {packet, raw}],
@@ -64,6 +64,18 @@ publish_blob(Blob, Args, State=#{socket:=Sock, read_timeout:=ReadTimeout}) ->
 %%====================================================================
 %% Internal
 %%====================================================================
+
+to_host(Binary) when is_binary(Binary) ->
+    binary_to_list(Binary);
+to_host(Term) ->
+    Term.
+
+to_port(Binary) when is_binary(Binary) ->
+    binary_to_integer(Binary);
+to_port(List) when is_list(List) ->
+    list_to_integer(List);
+to_port(Int) ->
+    Int.
 
 header(ControlValue, IdValue, SortByValue) ->
     Version = <<?VERSION:4/big-unsigned-integer-unit:8>>,
