@@ -302,7 +302,10 @@ cerlnan_avro_timeout_test_() ->
             application:stop(cerlnan_avro),
             erlang:exit(ServerPid, normal)
         end,
-        [fun() -> {error, timeout} = publish_basic() end,
+        [fun() ->
+            {error, timeout} = publish_basic(),
+            timer:sleep(1) %% Pause let the worker restart.
+         end,
          fun() -> ok = publish_basic(false) end
         ]
     }.
