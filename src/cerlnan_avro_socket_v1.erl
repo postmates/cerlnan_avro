@@ -48,18 +48,19 @@ init(Args) ->
     {ok, Sock} = gen_tcp:connect(Host, Port, SOpts, ConnectTimeout),
     {ok, #{socket=>Sock, read_timeout=>ReadTimeout}}.
 
--spec publish_blob(iodata(), v1_publish_args(), v1_state()) -> {ok, v1_state()}.
+-spec publish_blob(iodata(), v1_publish_args(), v1_state()) -> {ok | {error, term()}, v1_state()}.
 publish_blob(Blob, Args, State=#{socket:=Sock, read_timeout:=ReadTimeout}) ->
     {Id, Payload} = payload(iolist_to_binary(Blob), Args),
     ok = gen_tcp:send(Sock, Payload),
 
-    case maps:is_key(id, Args) of
-        true ->
-            ok = wait_for_ack(Sock, Id, ReadTimeout);
-        false ->
-            ok
-    end,
-    {ok, State}.
+    Res =
+        case maps:get(sync, Args, true) of
+            true ->
+                wait_for_ack(Sock, Id, ReadTimeout);
+            false ->
+                ok
+        end,
+    {Res, State}.
 
 %%====================================================================
 %% Internal
@@ -180,71 +181,9 @@ payload_async_test() ->
     <<ExpectedSortBy:8/big-unsigned-integer-unit:8, Payload5/binary>> = Payload4,
     <<>> = Payload5.
 
-recv_payload(Sock) ->
-    case gen_tcp:recv(Sock, 4) of
-        {ok, LenBytes} ->
-            <<Len:4/big-unsigned-integer-unit:8>> = LenBytes,
-            {ok, Payload} = gen_tcp:recv(Sock, Len),
-            {ok, <<LenBytes/binary, Payload/binary>>};
-
-        Error ->
-            Error
-    end.
-
--spec echo_server(port(), undefined | non_neg_integer()) -> ok | no_return().
-echo_server(Listen, 0) ->
-    ok = gen_tcp:close(Listen);
-echo_server(Listen, N) ->
-    {ok, Sock} = gen_tcp:accept(Listen),
-    {ok, LenPrefixedPayload} = recv_payload(Sock),
-    ok = gen_tcp:send(Sock, LenPrefixedPayload),
-    ok = gen_tcp:close(Sock),
-    case N of
-        undefined ->
-            echo_server(Listen, N);
-        _ ->
-            echo_server(Listen, N-1)
-    end.
-
--spec ack_server(port(), undefined | non_neg_integer()) -> ok | no_return().
-ack_server(Listen, 0) ->
-    ok = gen_tcp:close(Listen);
-ack_server(Listen, N) ->
-    {ok, Sock} = gen_tcp:accept(Listen),
-    {ok, LenPrefixedPayload} = recv_payload(Sock),
-    <<_:4/binary, _:4/binary, _:4/binary, Id:8/binary, _/binary>> = LenPrefixedPayload,
-    ok = gen_tcp:send(Sock, Id),
-    ok = gen_tcp:close(Sock),
-    case N of
-        undefined ->
-            ack_server(Listen, N);
-        _ ->
-            ack_server(Listen, N-1)
-    end.
-
--spec timeout_server(port(), undefined | non_neg_integer()) -> no_return().
-timeout_server(Listen, 0) ->
-    ok = gen_tcp:close(Listen);
-timeout_server(Listen, N) ->
-    {ok, _Sock} = gen_tcp:accept(Listen),
-    timer:sleep(5000),
-    case N of
-        undefined ->
-            timeout_server(Listen, N);
-        _ ->
-            timeout_server(Listen, N-1)
-    end.
-
--spec spawn_server(function(), undefined | non_neg_integer()) -> {pid(), inet:port()}.
-spawn_server(F, N) ->
-    {ok, Listen} = gen_tcp:listen(0, [binary, {ip, {127,0,0,1}}, {packet, raw}, {active, false}]),
-    {ok, Port} = inet:port(Listen),
-
-    Pid = spawn_link(fun() -> F(Listen, N) end),
-    {Pid, Port}.
 
 publish_blob_echo_test() ->
-    {EchoPid, EchoPort} = spawn_server(fun echo_server/2, 1),
+    {EchoPid, EchoPort} = cerlnan_avro:echo_server(1),
 
     InitArgs = #{
         host => {127, 0, 0, 1},
@@ -252,14 +191,14 @@ publish_blob_echo_test() ->
     },
     {ok, State=#{socket:=Socket}} = init(InitArgs),
     Blob = <<"1234567890">>,
-    {ok, _} = publish_blob(Blob, #{}, State),
+    {ok, _} = publish_blob(Blob,  #{sync=>false}, State),
 
-    {ok, Payload} = recv_payload(Socket),
+    {ok, Payload} = cerlnan_avro:recv_payload(Socket),
     <<_:4/binary, _:4/binary, _:4/binary, _:8/binary, _:8/binary, Blob/binary>> = Payload,
     exit(EchoPid, normal).
 
 publish_blob_sync_happy_path_test() ->
-    {AckPid, AckPort} = spawn_server(fun ack_server/2, 1),
+    {AckPid, AckPort} = cerlnan_avro:ack_server(1),
     InitArgs = #{
         host => {127, 0, 0, 1},
         port => AckPort
@@ -269,8 +208,7 @@ publish_blob_sync_happy_path_test() ->
     exit(AckPid, normal).
 
 publish_blob_sync_timeout_crashes_test() ->
-    {AckPid, AckPort} = spawn_server(fun timeout_server/2, 1),
-    Id = 1,
+    {AckPid, AckPort} = cerlnan_avro:timeout_server(1),
     InitArgs = #{
         host => {127, 0, 0, 1},
         port => AckPort,
@@ -278,13 +216,7 @@ publish_blob_sync_timeout_crashes_test() ->
     },
     {ok, State} = init(InitArgs),
 
-    try publish_blob(<<>>, #{id=>Id}, State) of
-        {ok, _} ->
-            ?assert(false)
-    catch
-        error:{badmatch, {error, timeout}} ->
-            ok
-    end,
+    {{error, timeout}, _} = publish_blob(<<>>, #{sync=>true}, State),
     exit(AckPid, normal).
 
 -endif.
