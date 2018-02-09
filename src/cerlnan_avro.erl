@@ -4,6 +4,10 @@
          publish_blob/1, publish_blob/2, publish_blob/3
         ]).
 
+-ifdef(TEST).
+-export([timeout_server/1, ack_server/1, echo_server/1, recv_payload/1]).
+-endif.
+
 %%====================================================================
 %% Custom Types
 %%====================================================================
@@ -60,11 +64,19 @@ publish(Type, Schema, Record, Args) ->
 
 -spec publish(pool(), binary(), cerlnan_avro_schema:type_or_name(), native_avro_term(), map()) -> ok | {error, term()}.
 publish(Pool, Type, Schema, RecordOrRecords, Args) when is_list(RecordOrRecords) ->
+    case serialize(Type, Schema, RecordOrRecords) of
+        {ok, IOList} ->
+            publish_blob(Pool, IOList, Args);
+
+        Error ->
+            Error
+    end.
+
+serialize(Type, Schema, RecordOrRecords) ->
     Meta = [],
     Header = avro_ocf:make_header(Schema, Meta),
     Encoder = avro:make_encoder(Schema, [{encoding, avro_binary}]),
     {ok, Buffer} = cerlnan_avro_byte_buffer:open(),
-
     try
         RecordBlock =
             case RecordOrRecords of
@@ -75,8 +87,7 @@ publish(Pool, Type, Schema, RecordOrRecords, Args) when is_list(RecordOrRecords)
             end,
         ok = avro_ocf:write_header(Buffer, Header),
         ok = avro_ocf:append_file(Buffer, Header, RecordBlock),
-        {ok, IoList} = cerlnan_avro_byte_buffer:close(Buffer),
-        publish_blob(Pool, IoList, Args)
+        cerlnan_avro_byte_buffer:close(Buffer)
     catch
         Class:Reason ->
             % This is ugly, however erlavro likes to crash for
@@ -90,15 +101,15 @@ publish(Pool, Type, Schema, RecordOrRecords, Args) when is_list(RecordOrRecords)
             {error, {serialization_failed, Reason}}
     end.
 
--spec publish_blob(iodata()) -> ok.
+-spec publish_blob(iodata()) -> ok | {error, term()}.
 publish_blob(Blob) ->
     publish_blob(?MODULE, Blob, #{}).
 
--spec publish_blob(pool(), iodata()) -> ok.
+-spec publish_blob(pool(), iodata()) -> ok | {error, term()}.
 publish_blob(Pool, Blob) ->
     publish_blob(Pool, Blob, #{}).
 
--spec publish_blob(pool(), iodata(), map()) -> ok.
+-spec publish_blob(pool(), iodata(), map()) -> ok | {error, term()}.
 publish_blob(Pool, Blob, Args) ->
     poolboy:transaction(
         Pool,
@@ -146,6 +157,78 @@ default_pool() ->
 
 -include_lib("eunit/include/eunit.hrl").
 
+ack_server(N) ->
+    spawn_server(fun ack_server/2, N).
+
+echo_server(N) ->
+    spawn_server(fun echo_server/2, N).
+
+timeout_server(N) ->
+    spawn_server(fun timeout_server/2, N).
+
+recv_payload(Sock) ->
+    case gen_tcp:recv(Sock, 4) of
+        {ok, LenBytes} ->
+            <<Len:4/big-unsigned-integer-unit:8>> = LenBytes,
+            {ok, Payload} = gen_tcp:recv(Sock, Len),
+            {ok, <<LenBytes/binary, Payload/binary>>};
+
+        Error ->
+            Error
+    end.
+
+-spec echo_server(port(), undefined | non_neg_integer()) -> ok | no_return().
+echo_server(Listen, 0) ->
+    ok = gen_tcp:close(Listen);
+echo_server(Listen, N) ->
+    {ok, Sock} = gen_tcp:accept(Listen),
+    {ok, LenPrefixedPayload} = recv_payload(Sock),
+    ok = gen_tcp:send(Sock, LenPrefixedPayload),
+    ok = gen_tcp:close(Sock),
+    case N of
+        undefined ->
+            echo_server(Listen, N);
+        _ ->
+            echo_server(Listen, N-1)
+    end.
+
+-spec ack_server(port(), undefined | non_neg_integer()) -> ok | no_return().
+ack_server(Listen, 0) ->
+    ok = gen_tcp:close(Listen);
+ack_server(Listen, N) ->
+    {ok, Sock} = gen_tcp:accept(Listen),
+    {ok, LenPrefixedPayload} = recv_payload(Sock),
+    <<_:4/binary, _:4/binary, _:4/binary, Id:8/binary, _/binary>> = LenPrefixedPayload,
+    ok = gen_tcp:send(Sock, Id),
+    ok = gen_tcp:close(Sock),
+    case N of
+        undefined ->
+            ack_server(Listen, N);
+        _ ->
+            ack_server(Listen, N-1)
+    end.
+
+-spec timeout_server(port(), undefined | non_neg_integer()) -> no_return().
+timeout_server(Listen, 0) ->
+    ok = gen_tcp:close(Listen);
+timeout_server(Listen, N) ->
+    {ok, _Sock} = gen_tcp:accept(Listen),
+    timer:sleep(5000),
+    case N of
+        undefined ->
+            timeout_server(Listen, N);
+        _ ->
+            timeout_server(Listen, N-1)
+    end.
+
+-spec spawn_server(function(), undefined | non_neg_integer()) -> {pid(), inet:port()}.
+spawn_server(F, N) ->
+    {ok, Listen} = gen_tcp:listen(0, [binary, {ip, {127,0,0,1}}, {packet, raw}, {active, false}]),
+    {ok, Port} = inet:port(Listen),
+
+    Pid = spawn_link(fun() -> F(Listen, N) end),
+    {Pid, Port}.
+
 default_pool_test() ->
     {?MODULE, PoolConfig} = default_pool(),
     #{pool_size := 10,
@@ -156,7 +239,8 @@ default_pool_test() ->
       connect_timeout := 1000,
       read_timeout := 3000} = BackendArgs.
 
-cerlnan_avro_test_() ->
+%%% Seriliazation Tests
+cerlnan_avro_serialization_test_() ->
     {setup,
         fun () ->
             Pools = [{?MODULE, #{backend => cerlnan_avro_socket_dummy}}],
@@ -165,17 +249,21 @@ cerlnan_avro_test_() ->
             ok
         end,
         fun(_Apps) ->
+            application:unset_env(?MODULE, pools),
             application:stop(cerlnan_avro)
         end,
-        [fun publish_blob_basic/0,
-         fun publish_basic/0,
-         fun publish_bad_value/0]
+        [fun() -> ok = publish_blob_basic() end,
+         fun() -> ok = publish_basic() end,
+         fun() -> {error, {serialization_failed, _}} = publish_bad_value() end]
     }.
 
 publish_blob_basic() ->
-    ok = publish_blob(<<>>).
+    publish_blob(<<>>).
 
 publish_basic() ->
+    publish_basic(true).
+
+publish_basic(Sync) ->
     UserSchema =
         cerlnan_avro_schema:record(
             <<"User">>,
@@ -185,7 +273,7 @@ publish_basic() ->
             [{namespace, 'example.avro'}]),
     User1 = [{name, "Foo Bar"}, {favorite_number, 10}, {favorite_color, "maroon"}],
     User2 = [{name, "Alice Bob"}, {favorite_number, 32}, {favorite_color, "greenish-gold"}],
-    ok = publish("example.avro.User", UserSchema, [User1, User2]).
+    publish("example.avro.User", UserSchema, [User1, User2], #{sync=>Sync}).
 
 publish_bad_value() ->
     UserSchema =
@@ -197,4 +285,26 @@ publish_bad_value() ->
             [{namespace, 'example.avro'}]),
     User1 = [{name, "Foo Bar"}, {favourite_number, 10}, {favourite_color, "maroon"}],
     {error, {serialization_failed, _}} = publish("example.avro.User", UserSchema, [User1]).
+
+cerlnan_avro_timeout_test_() ->
+    {setup,
+        fun () ->
+            {Pid, Port} = cerlnan_avro:timeout_server(undefined),
+            application:set_env(?MODULE, port, Port),
+            application:set_env(?MODULE, pool_size, 1),
+            application:set_env(?MODULE, pool_overflow, 0),
+
+            timer:sleep(1),
+            {ok, _Apps} = application:ensure_all_started(cerlnan_avro),
+            Pid
+        end,
+        fun(ServerPid) ->
+            application:stop(cerlnan_avro),
+            erlang:exit(ServerPid, normal)
+        end,
+        [fun() -> {error, timeout} = publish_basic() end,
+         fun() -> ok = publish_basic(false) end
+        ]
+    }.
+
 -endif.

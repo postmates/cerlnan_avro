@@ -28,7 +28,7 @@
 %%====================================================================
 
 -callback init(Args::map()) -> {ok, any()} | {error, any()}.
--callback publish_blob(Blob::iodata(), Args::map(), State::any()) -> {ok, any()} | {error, Reason::any()}.
+-callback publish_blob(Blob::iodata(), Args::map(), State::any()) -> {ok | {error, term()}, any()} | {error, Reason::any()}.
 
 %%====================================================================
 %% API
@@ -63,9 +63,11 @@ init(SocketArgs) ->
     {ok, BackendState} = Backend:init(BackendArgs),
     {ok, #{backend => Backend, backend_state => BackendState, socket => undefined}}.
 
-handle_call({publish_blob, Blob, Args}, _From, State=#{backend:=Backend, backend_state:=BackendState}) ->
-    {ok, NewBackendState} = Backend:publish_blob(Blob, Args, BackendState),
-    {reply, ok, State#{backend_state=>NewBackendState}}.
+handle_call({publish_blob, Blob, Args}, From, State=#{backend:=Backend, backend_state:=BackendState}) ->
+    {Reply, NewBackendState} = Backend:publish_blob(Blob, Args, BackendState),
+    _ = gen_server:reply(From, Reply),
+    ok = Reply, % Force crash on error.  Prevent live-lock scenarios.
+    {reply, Reply, State#{backend_state=>NewBackendState}}.
 
 handle_cast(_, State) ->
     {noreply, State}.
