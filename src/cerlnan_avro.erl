@@ -304,7 +304,7 @@ cerlnan_avro_timeout_test_() ->
         end,
         [fun() ->
             {error, timeout} = publish_basic(),
-            timer:sleep(1) %% Pause let the worker restart.
+            timer:sleep(5) %% Pause let the worker restart.
          end,
          fun() -> ok = publish_basic(false) end
         ]
