@@ -1,7 +1,7 @@
 {application, cerlnan_avro,
  [
   {description, "Erlang client for Cernan's avro source."},
-  {vsn, "0.0.3"},
+  {vsn, "0.0.4"},
   {registered, [cerlnan_avro]},
   {mod, {cerlnan_avro_app, []}},
   {applications,
