@@ -67,7 +67,7 @@ handle_call({publish_blob, Blob, Args}, From, State=#{backend:=Backend, backend_
     {Reply, NewBackendState} = Backend:publish_blob(Blob, Args, BackendState),
     _ = gen_server:reply(From, Reply),
     ok = Reply, % Force crash on error.  Prevent live-lock scenarios.
-    {reply, Reply, State#{backend_state=>NewBackendState}}.
+    {noreply, State#{backend_state=>NewBackendState}}.
 
 handle_cast(_, State) ->
     {noreply, State}.
