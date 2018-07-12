@@ -8,7 +8,9 @@
    [
     kernel,
     stdlib,
-    lager
+    lager,
+    erlavro,
+    poolboy
    ]},
   {env,[]},
   {modules, []},
