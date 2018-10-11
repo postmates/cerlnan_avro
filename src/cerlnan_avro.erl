@@ -4,6 +4,14 @@
          publish_blob/1, publish_blob/2, publish_blob/3
         ]).
 
+-ifdef(OTP_RELEASE). %% this implies 21 or higher
+-define(EXCEPTION(Class, Reason, Stacktrace), Class:Reason:Stacktrace).
+-define(GET_STACK(Stacktrace), Stacktrace).
+-else.
+-define(EXCEPTION(Class, Reason, _), Class:Reason).
+-define(GET_STACK(_), erlang:get_stacktrace()).
+-endif.
+
 -ifdef(TEST).
 -export([timeout_server/1, ack_server/1, echo_server/1, recv_payload/1]).
 -endif.
@@ -89,14 +97,14 @@ serialize(Type, Schema, RecordOrRecords) ->
         ok = avro_ocf:append_file(Buffer, Header, RecordBlock),
         cerlnan_avro_byte_buffer:close(Buffer)
     catch
-        Class:Reason ->
+        ?EXCEPTION(Class, Reason, Stacktrace) ->
             % This is ugly, however erlavro likes to crash for
             % a number of reasons.  To ensure we always return,
             % we snag whatever goes wrong and wrap it into
             % a generic error type.
             _ = lager:error(
                 "~nStacktrace:~s",
-                [lager:pr_stacktrace(erlang:get_stacktrace(), {Class, Reason})]
+                [lager:pr_stacktrace(?GET_STACK(Stacktrace), {Class, Reason})]
              ),
             {error, {serialization_failed, Reason}}
     end.

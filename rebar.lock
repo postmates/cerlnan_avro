@@ -1,22 +1,20 @@
-{"1.1.0",
 [{<<"erlavro">>,
   {git,"https://github.com/klarna/erlavro.git",
-       {ref,"aac12c0c38e0f52c46f777e7e47e7b64ce1fad27"}},
+       {ref,"9d2459b86de0138e55a6c2d3b97242434b2c1e79"}},
   0},
  {<<"goldrush">>,
   {git,"https://github.com/basho/goldrush.git",
        {ref,"8f1b715d36b650ec1e1f5612c00e28af6ab0de82"}},
   1},
- {<<"jsone">>,{pkg,<<"jsone">>,<<"1.4.3">>},1},
+ {<<"jsone">>,
+  {git,"https://github.com/sile/jsone.git",
+       {ref,"e273151504fbb1201f3a2d5effe350a4a27c3121"}},
+  0},
  {<<"lager">>,
   {git,"https://github.com/erlang-lager/lager.git",
        {ref,"81eaef0ce98fdbf64ab95665e3bc2ec4b24c7dac"}},
   0},
  {<<"poolboy">>,
   {git,"https://github.com/devinus/poolboy.git",
-       {ref,"3bb48a893ff5598f7c73731ac17545206d259fac"}},
-  0}]}.
-[
-{pkg_hash,[
- {<<"jsone">>, <<"6D5F802136249E64F9D4997043B13355C6EAC314217DC3B19BF3677E351A0641">>}]}
-].
+       {ref,"29be47db8c2be38b18c908e43a80ebb7b9b6116b"}},
+  0}].
